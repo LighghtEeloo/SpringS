@@ -229,17 +229,22 @@ class Reader(Player):
 class Rigid(Player):
     def __init__(self, side=0, frame=None):
         super().__init__(side=side, frame=frame)
+
         self.relationGrade = [
             [50,24,11, 5], # 己方已满
-            [-4,11, 5, 2], # 己方差一
-            [-9,-4, 2, 0]  # 己方差二
+            [-400,11, 5, 2], # 己方差一
+            [-900,-400, 2, 0]  # 己方差二
         ]
+        # 对手已满，差一，差二，差三
+
         self.biasGrade = [
             18, 8, 3, 1
         ]
+        # 已满至差三的分数
+
         self.numNext = 0
-        self.maxDepth = 9
-        self.candidateBias = 2
+        self.maxDepth = 1
+        self.candidateBias = 5
 
     def next(self, simple=False):
         self.numNext += 1
@@ -287,10 +292,17 @@ class Rigid(Player):
             if moment.won == 0:
                 moment.nextStep(self.Judge, c)
                 self.steper(opp, moment.nextMoments, depth-1, self.candidateBias)
+
+    # Wrong!
+    # Wrong!!
+    # Wrong!!!
     def relationalJudge(self, frm, view) -> int:
         def gradeHelper(potA, potB, view):
-            if potA.side == view and potB.side != view:
+            oppview = view % 2 + 1
+            if potA.side == view and potB.side == oppview:
                 return self.relationGrade[potA.limit - potA.height - 1][potB.limit - potB.height - 1]
+            if potA.side == view and potB.side == 0:
+                return self.relationGrade[potA.limit - potA.height - 1][potB.limit - potB.height - 1] // 2
             return 0
         size = frm.size
         grade = 0
@@ -427,8 +439,8 @@ if __name__ == "__main__":
     # rd.next()
 
     # REPL((Rigid(1,frm), Human(2,frm)),frm)
-    # REPL((Rigid(1,frm), Rigid(2,frm)),frm)
+    REPL((Rigid(1,frm), Rigid(2,frm)),frm)
 
-    rd = Rigid(1,frm)
-    frm.drop(*rd.next(),1)
-    frm.output()
+    # rd = Rigid(1,frm)
+    # frm.drop(*rd.next(),1)
+    # frm.output()
