@@ -1,15 +1,12 @@
-# import sys
-# from PyQt5.QtWidgets import QApplication, QWidget
-# # QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
-
-
 import sys
+from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QColor, QCursor, QKeyEvent
 from PyQt5.QtWidgets import (
-    QLCDNumber, QSlider, QVBoxLayout, 
+    QLCDNumber, QSlider, QVBoxLayout, QHBoxLayout, 
     QWidget, QApplication, QFrame
 )
+QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
 
 
 class Mainwindow(QWidget):
