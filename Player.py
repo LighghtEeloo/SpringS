@@ -46,7 +46,7 @@ class Moment:
 '''
 
 class Moment:
-    def __init__(self, view, parent=None, step=None, frame=None, grading=None):
+    def __init__(self, view, parent=None, step=None, frame=None, grading=None, rad=None):
         self.parent = parent
         self.won = None
         self.grade = None
@@ -54,7 +54,15 @@ class Moment:
         self.step = step
         self.frame: Frame = frame
         self.grading: function = grading
+        self.rad = rad
         self.nextMoments = []
+    def __eq__(self, other):
+        return super().__eq__(other)
+    def __hash__(self):
+        if self.frame is None:
+            return super().__hash__()
+        else:
+            return self.frame.__hash__()
     def __getitem__(self, position):
         if position < len(self.nextMoments):
             return self.nextMoments[position]
@@ -74,7 +82,7 @@ class Moment:
             _.frame.output()
             self.nextMoments.append(_)
         self.frame = None
-        return None
+        return self.nextMoments
     def assess(self):
         if self.frame is None and len(self.nextMoments) > 0:
             bucket = []
@@ -155,15 +163,12 @@ class Rigid(Player):
         [-900, -400, 2, 0]  # 己方差二
     ]
     # 对手已满，差一，差二，差三
-
     biasGrade = [
         18, 8, 3, 1
     ]
     # 已满至差三的分数
     def __init__(self, side=0, frame=None):
         super().__init__(side=side, frame=frame)
-        
-
         self.numNext = 0
         self.maxDepth = 1
         self.candidateBias = 5
@@ -220,6 +225,14 @@ class Rigid(Player):
                 self.steper(opp, moment.nextMoments,
                             depth-1, self.candidateBias)
     '''
+    def next(self):
+        opp = self.side % 2 + 1
+        root = Moment(opp, frame=deepcopy(self.frame), grading=self.Judge)
+        dilatation = [root]
+        for _ in range(self.maxDepth):
+            tmp = []
+            for node in dilatation:
+                tmp.extend(node.dilate())
 
     # Wrong!
     # Wrong!!
@@ -318,8 +331,8 @@ if __name__ == "__main__":
     # frm.drop(*rd.next(),1)
     # frm.output()
 
-    m = Moment(1,frame=frm, grading=Rigid().Judge)
+    frm.output()
+    m = Moment(2,frame=frm, grading=Rigid().Judge)
     m.dilate()
     print(m.assess())
-    print(f"{m[2]} {m[3]}")
-    print(m)
+    print(f"{m.nextMoments}")

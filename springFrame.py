@@ -1,5 +1,6 @@
 import os,sys
 import pickle
+from random import random
 from copy import deepcopy
 
 printing = False
@@ -12,6 +13,8 @@ class Pot:
         self.limit = limit
     def __repr__(self):
         return f"({self.height}|{chr(self.side+64)})"
+    def __eq__(self, value):
+        return self.side==value.side and self.height==value.height and self.limit==value.limit
     def dropcheck(self,side):
         return self.side == side or self.side == 0
     def drill(self, side):
@@ -38,8 +41,17 @@ class Frame:
                     self.board[i][j].limit -= 1
                 if (i == 0 or i == size[0]-1) and (j == 0 or j == size[1]-1):
                     self.board[i][j].limit -= 1
+        self.hashBoard = [[random()*2**32//1 for j in range(size[1])] for i in range(size[0])]
     def __getitem__(self, position):
         return self.board[position]
+    def __eq__(self, other):
+        eqBoard = True
+        for i in range(self.size[0]):
+            for j in range(self.size[1]):
+                if self.board[i][j] != other.board[i][j]:
+                    eqBoard = False
+                    break
+        return eqBoard and self.size==other.size
     def sync(self, board=None):
         if board != None:
             self.board = board[:]
