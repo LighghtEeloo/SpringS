@@ -38,6 +38,8 @@ class Frame:
                     self.board[i][j].limit -= 1
                 if (i == 0 or i == size[0]-1) and (j == 0 or j == size[1]-1):
                     self.board[i][j].limit -= 1
+    def __getitem__(self, position):
+        return self.board[position]
     def sync(self, board=None):
         if board != None:
             self.board = board[:]

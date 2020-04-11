@@ -1,6 +1,6 @@
 from springFrame import *
 
-
+'''
 class Moment:
     def __init__(self, step, view, frame, won=0):
         self.won = won
@@ -15,6 +15,7 @@ class Moment:
             self.view = view
             self.frame = frame
             self.grade = (-1)*(abs(view-won)-1)*31*60
+
     # TODO: pruning by candidate
 
     def nextStep(self, grading, candidate=0):
@@ -40,7 +41,56 @@ class Moment:
             for moment in self.nextMoments:
                 print(f"next grade: {moment.grade}")
                 moment.frame.output()
+    def erase(self):
+        self.frame = None
+'''
 
+class Moment:
+    def __init__(self, view, parent=None, step=None, frame=None, grading=None):
+        self.parent = parent
+        self.won = None
+        self.grade = None
+        self.view = view
+        self.step = step
+        self.frame: Frame = frame
+        self.grading: function = grading
+        self.nextMoments = []
+    def __getitem__(self, position):
+        if position < len(self.nextMoments):
+            return self.nextMoments[position]
+        return None
+    def __repr__(self):
+        return f"\nMoment: \n  - step: {self.step} <{chr(self.view+64)}>\n  - grade: {self.grade}\n"
+    def dilate(self):
+        opp = self.view % 2 + 1
+        if self.frame is None:
+            return ValueError
+        frm: Frame = self.frame
+        row, col = frm.size[0], frm.size[1]
+        steps = [(i, j) for i in range(row) for j in range(col) if frm[i][j].side != self.view]
+        for step in steps:
+            _ = Moment(opp, self, step, deepcopy(frm), self.grading)
+            _.frame.drop(*step, opp)
+            _.frame.output()
+            self.nextMoments.append(_)
+        self.frame = None
+        return None
+    def assess(self):
+        if self.frame is None and len(self.nextMoments) > 0:
+            bucket = []
+            for node in self.nextMoments:
+                if node.grade is None:
+                    node.assess()
+                bucket.append(node.grade)
+            return -max(bucket)
+        else:
+            self.won = self.frame.win()
+            if self.won == 0:
+                self.grade = self.grading(self.frame, self.view)
+            else:
+                self.grade = 1860
+            return self.grade
+        return ValueError
 
 class Player:
     def __init__(self, side=0, frame=None):
@@ -99,25 +149,26 @@ class Reader(Player):
 
 
 class Rigid(Player):
+    relationGrade = [
+        [50, 24, 11, 5],  # 己方已满
+        [-400, 11, 5, 2],  # 己方差一
+        [-900, -400, 2, 0]  # 己方差二
+    ]
+    # 对手已满，差一，差二，差三
+
+    biasGrade = [
+        18, 8, 3, 1
+    ]
+    # 已满至差三的分数
     def __init__(self, side=0, frame=None):
         super().__init__(side=side, frame=frame)
-
-        self.relationGrade = [
-            [50, 24, 11, 5],  # 己方已满
-            [-400, 11, 5, 2],  # 己方差一
-            [-900, -400, 2, 0]  # 己方差二
-        ]
-        # 对手已满，差一，差二，差三
-
-        self.biasGrade = [
-            18, 8, 3, 1
-        ]
-        # 已满至差三的分数
+        
 
         self.numNext = 0
         self.maxDepth = 1
         self.candidateBias = 5
 
+    '''
     def next(self, simple=False):
         self.numNext += 1
         candidate = self.candidateBias
@@ -168,17 +219,19 @@ class Rigid(Player):
                 moment.nextStep(self.Judge, c)
                 self.steper(opp, moment.nextMoments,
                             depth-1, self.candidateBias)
+    '''
 
     # Wrong!
     # Wrong!!
     # Wrong!!!
-    def relationalJudge(self, frm, view) -> int:
+    @classmethod
+    def relationalJudge(cls, frm, view) -> int:
         def gradeHelper(potA, potB, view):
             oppview = view % 2 + 1
             if potA.side == view and potB.side == oppview:
-                return self.relationGrade[potA.limit - potA.height - 1][potB.limit - potB.height - 1]
+                return cls.relationGrade[potA.limit - potA.height - 1][potB.limit - potB.height - 1]
             if potA.side == view and potB.side == 0:
-                return self.relationGrade[potA.limit - potA.height - 1][potB.limit - potB.height - 1] // 2
+                return cls.relationGrade[potA.limit - potA.height - 1][potB.limit - potB.height - 1] // 2
             return 0
         size = frm.size
         grade = 0
@@ -189,79 +242,84 @@ class Rigid(Player):
                 if x < size[0]:
                     _.append(gradeHelper(
                         frm.board[i][j], frm.board[x][y], view))
-                    # grade += self.gradeHelper(frm.board[i][j], frm.board[x][y], view)
                 x, y = i, j + 1
                 if y < size[1]:
                     _.append(gradeHelper(
                         frm.board[i][j], frm.board[x][y], view))
-                    # grade += self.gradeHelper(frm.board[i][j], frm.board[x][y], view)
                 x, y = i - 1, j
                 if x >= 0:
                     _.append(gradeHelper(
                         frm.board[i][j], frm.board[x][y], view))
-                    # grade += self.gradeHelper(frm.board[i][j], frm.board[x][y], view)
                 x, y = i, j - 1
                 if y >= 0:
                     _.append(gradeHelper(
                         frm.board[i][j], frm.board[x][y], view))
-                    # grade += self.gradeHelper(frm.board[i][j], frm.board[x][y], view)
         grade = sum(_)
         # print(f"relational: {_}")
         return grade
-
-    def biasJudge(self, frm, view) -> int:
+    @classmethod
+    def biasJudge(cls, frm, view) -> int:
         size = frm.size
         grade = 0
         for i in range(size[0]):
             for j in range(size[1]):
                 pot = frm.board[i][j]
                 if pot.side == view:
-                    grade += self.biasGrade[pot.limit - pot.height - 1]
+                    grade += cls.biasGrade[pot.limit - pot.height - 1]
         return grade
-
-    def Judge(self, frm=None, view=1) -> int:
-        # if frm == None:
+    @classmethod
+    def Judge(cls, frm=None, view=1) -> int:
+        # if frm is None:
         #     frm = self.frame
         oppview = view % 2 + 1
-        grade = self.relationalJudge(frm, view) + self.biasJudge(frm, view) - \
-            self.relationalJudge(frm, oppview) - self.biasJudge(frm, oppview)
+        grade = cls.relationalJudge(frm, view) + cls.biasJudge(frm, view) - \
+            cls.relationalJudge(frm, oppview) - cls.biasJudge(frm, oppview)
         return grade
 
 
 if __name__ == "__main__":
     os.chdir(sys.path[0])
-    # frm = Frame()
-    # frm.loop()
-
-    # h1 = Human()
-    # print(h1.next())
-    # h2 = Human()
-    # REPL((h1,h2),frm)
-
-    # REPL((Human(1),Human(2)),Frame())
-
-    # reader = Reader(addr="rec.pkl")
-    # REPL((reader,reader),Frame())
 
     frm = Frame()
-    # # frm.drop(0,0,1)
-    # # Moment((0,0),1,frm).nextStep(Judge)
-    # frm.drop(0,0,1)
-    # frm.drop(0,4,2)
-    # frm.drop(3,0,1)
-    # frm.drop(3,4,2)
-    # frm.drop(0,2,1)
-    # frm.drop(3,2,2)
-    # frm.drop(0,2,1)
-    # frm.drop(3,2,2)
-    # frm.drop(1,0,1)
-    # frm.drop(2,4,2)
-    # rd = Rigid(1, frm)
-    # rd.next()
 
+    '''Human vs Human:'''
+    # REPL((Human(1),Human(2)),Frame())
+
+    '''Reader:'''
+    if True:
+        # reader = Reader(addr="rec.pkl")
+        # REPL((reader,reader),Frame())
+        pass
+
+    '''Drop Test:'''
+    if True:
+        frm.drop(0,0,1)
+        frm.drop(0,4,2)
+        frm.drop(3,0,1)
+        frm.drop(3,4,2)
+        frm.drop(0,2,1)
+        frm.drop(3,2,2)
+        frm.drop(0,2,1)
+        frm.drop(3,2,2)
+        frm.drop(1,0,1)
+        frm.drop(2,4,2)
+        # rd = Rigid(1, frm)
+        # rd.next()
+        pass
+
+    '''Human vs Rigid:'''
     # REPL((Rigid(1,frm), Human(2,frm)),frm)
-    REPL((Rigid(1, frm), Rigid(2, frm)), frm)
+
+    '''Rigid vs Rigid:'''
+    # REPL((Rigid(1, frm), Rigid(2, frm)), frm)
+
 
     # rd = Rigid(1,frm)
     # frm.drop(*rd.next(),1)
     # frm.output()
+
+    m = Moment(1,frame=frm, grading=Rigid().Judge)
+    m.dilate()
+    print(m.assess())
+    print(f"{m[2]} {m[3]}")
+    print(m)
