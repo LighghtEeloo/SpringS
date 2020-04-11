@@ -52,6 +52,14 @@ class Frame:
                     eqBoard = False
                     break
         return eqBoard and self.size==other.size
+    def __repr__(self):
+        strBoard = ""
+        for i in range(self.size[0]):
+            for j in range(self.size[1]):
+                strBoard += f"{self.board[i][j]}"
+                strBoard += ","
+            strBoard += "\n"
+        return strBoard
     def sync(self, board=None):
         if board != None:
             self.board = board[:]

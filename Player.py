@@ -1,52 +1,8 @@
 from springFrame import *
 
-'''
-class Moment:
-    def __init__(self, step, view, frame, won=0):
-        self.won = won
-        if won == 0:
-            self.step = step
-            self.view = view
-            self.frame = frame
-            self.grade = None
-            self.nextMoments = []
-        else:
-            self.step = step
-            self.view = view
-            self.frame = frame
-            self.grade = (-1)*(abs(view-won)-1)*31*60
-
-    # TODO: pruning by candidate
-
-    def nextStep(self, grading, candidate=0):
-        self.nextMoments = []
-        opp = self.view % 2 + 1
-        for i in range(self.frame.size[0]):
-            for j in range(self.frame.size[1]):
-                frm = deepcopy(self.frame)
-                if frm.drop(i, j, opp) != -1:
-                    if frm.win() == 0:
-                        self.nextMoments.append(Moment((i, j), opp, frm))
-                        self.nextMoments[-1].grade = grading(
-                            frm=self.nextMoments[-1].frame, view=opp)
-                        if printing:
-                            print("step graded:", self.nextMoments[-1].grade)
-                    else:
-                        self.nextMoments.append(
-                            Moment((i, j), opp, frm, frm.win()))
-        self.nextMoments.sort(key=lambda x: (x.grade), reverse=1)
-        if candidate != 0:
-            self.nextMoments = self.nextMoments[:candidate]
-        if printing:
-            for moment in self.nextMoments:
-                print(f"next grade: {moment.grade}")
-                moment.frame.output()
-    def erase(self):
-        self.frame = None
-'''
 
 class Moment:
-    def __init__(self, view, parent=None, step=None, frame=None, grading=None, rad=None):
+    def __init__(self, view, parent=None, step=None, frame=None, grading=None):
         self.parent = parent
         self.won = None
         self.grade = None
@@ -54,10 +10,10 @@ class Moment:
         self.step = step
         self.frame: Frame = frame
         self.grading: function = grading
-        self.rad = rad
         self.nextMoments = []
+        self.visited = None
     def __eq__(self, other):
-        return super().__eq__(other)
+        return self.frame==other.frame
     def __hash__(self):
         if self.frame is None:
             return super().__hash__()
@@ -68,19 +24,32 @@ class Moment:
             return self.nextMoments[position]
         return None
     def __repr__(self):
-        return f"\nMoment: \n  - step: {self.step} <{chr(self.view+64)}>\n  - grade: {self.grade}\n"
-    def dilate(self):
+        return f"\nMoment: lx{self.visited}, {id(self)}\n  - step: {self.step} <{chr(self.view+64)}>\n  - grade: {self.grade}\n{self.frame}"
+    def dilate(self, rad=None):
         opp = self.view % 2 + 1
         if self.frame is None:
+            # print("?-*-?")
+            # exit(14)
             return ValueError
         frm: Frame = self.frame
+        # If the node has won, there's no need for further dilatation
+        if frm.win() != 0:
+            self.grade = 1860 if frm.win() == self.view else -1860
+            return []
         row, col = frm.size[0], frm.size[1]
         steps = [(i, j) for i in range(row) for j in range(col) if frm[i][j].side != self.view]
         for step in steps:
             _ = Moment(opp, self, step, deepcopy(frm), self.grading)
             _.frame.drop(*step, opp)
-            _.frame.output()
+            if _.frame.win() != 0:
+                self.visited = -1
+            # _.frame.output()
             self.nextMoments.append(_)
+        self.visited = len(self.nextMoments) if self.visited != -1 else -1
+        if not rad is None:
+            # TODO: use rad!
+            self.nextMoments.sort(key=lambda x: (-self.grading(x.frame, opp)))
+            self.nextMoments = self.nextMoments[:rad]
         self.frame = None
         return self.nextMoments
     def assess(self):
@@ -90,19 +59,38 @@ class Moment:
                 if node.grade is None:
                     node.assess()
                 bucket.append(node.grade)
-            return -max(bucket)
-        else:
+            # print(self)
+            # print(bucket)
+            self.grade = -max(bucket)
+        elif not self.frame is None:
             self.won = self.frame.win()
             if self.won == 0:
                 self.grade = self.grading(self.frame, self.view)
-            else:
+            elif self.won == self.view:
                 self.grade = 1860
-            return self.grade
-        return ValueError
+            elif self.won != self.view:
+                self.grade = -1860
+            if self.grade is None:
+                pt = self
+                while not pt is None:
+                    print(pt)
+                    pt = pt.parent
+                exit(13)
+        elif len(self.nextMoments) == 0:
+            # self.grade = 0
+            if self.grade is None:
+                pt = self
+                while not pt is None:
+                    print(pt)
+                    print("!-*-!")
+                    # print(pt.nextMoments)
+                    pt = pt.parent
+                exit(13)
+        return self.grade
 
 class Player:
     def __init__(self, side=0, frame=None):
-        if frame != None:
+        if not frame is None:
             self.frame = frame  # connected!
         else:
             self.frame = Frame()
@@ -170,69 +158,25 @@ class Rigid(Player):
     def __init__(self, side=0, frame=None):
         super().__init__(side=side, frame=frame)
         self.numNext = 0
-        self.maxDepth = 1
-        self.candidateBias = 5
+        self.maxDepth = 5
+        self.radius = 9
 
-    '''
-    def next(self, simple=False):
-        self.numNext += 1
-        candidate = self.candidateBias
-        # candidate = self.candidateBias + self.numNext // 2
-        firstSteps = []
-        opp = self.side % 2 + 1
-        # print("!-*-!")
-        # self.frame.output()
-        for i in range(self.frame.size[0]):
-            for j in range(self.frame.size[1]):
-                # print(f"trying: ({i},{j})")
-                frm = deepcopy(self.frame)
-                if frm.drop(i, j, self.side) != -1:
-                    if frm.win() == 0:
-                        firstSteps.append(Moment((i, j), self.side, frm))
-                        firstSteps[-1].grade = self.Judge(
-                            frm=firstSteps[-1].frame, view=self.side)
-                        # print("graded:", firstSteps[-1].grade)
-                    else:
-                        firstSteps.append(
-                            Moment((i, j), self.side, frm, frm.win()))
-        firstSteps.sort(key=lambda x: (x.grade), reverse=1)
-        if not simple:
-            self.steper(opp, firstSteps, self.maxDepth-1, candidate)
-            with open("allSteps.pkl", 'wb') as f:
-                pickle.dump(firstSteps, f)
-            if printing:
-                print("-------- Finished! --------")
-            return firstSteps[0].step
-        else:
-            for moment in firstSteps:
-                print(f" -> {moment.step} => {moment.grade}")
-            return firstSteps[0].step
-
-    def steper(self, view, Moments: list, depth=0, candidate=1):
-        if depth == 0:
-            return
-        if printing:
-            print(f"depth: {depth}")
-        opp = self.side % 2 + 1
-        c = candidate
-        candidate = len(Moments) if candidate > len(Moments) else candidate
-        while candidate >= 2 and candidate < len(Moments) and Moments[candidate-1].grade == Moments[candidate-2].grade:
-            candidate += 1
-        Moments = Moments[:candidate]
-        for moment in Moments:
-            if moment.won == 0:
-                moment.nextStep(self.Judge, c)
-                self.steper(opp, moment.nextMoments,
-                            depth-1, self.candidateBias)
-    '''
     def next(self):
+        rad = self.radius
+        self.numNext += 1
         opp = self.side % 2 + 1
         root = Moment(opp, frame=deepcopy(self.frame), grading=self.Judge)
         dilatation = [root]
-        for _ in range(self.maxDepth):
+        for depth in range(self.maxDepth):
+            print("depth:", depth)
             tmp = []
             for node in dilatation:
-                tmp.extend(node.dilate())
+                a = node.dilate(rad=rad)
+                tmp.extend(a)
+            dilatation = tmp.copy()
+        root.assess()
+        root.nextMoments.sort(key=lambda x: (-x.grade))
+        return root.nextMoments[0].step
 
     # Wrong!
     # Wrong!!
@@ -306,16 +250,16 @@ if __name__ == "__main__":
 
     '''Drop Test:'''
     if True:
-        frm.drop(0,0,1)
-        frm.drop(0,4,2)
-        frm.drop(3,0,1)
-        frm.drop(3,4,2)
-        frm.drop(0,2,1)
-        frm.drop(3,2,2)
-        frm.drop(0,2,1)
-        frm.drop(3,2,2)
-        frm.drop(1,0,1)
-        frm.drop(2,4,2)
+        # frm.drop(0,0,1)
+        # frm.drop(0,4,2)
+        # frm.drop(3,0,1)
+        # frm.drop(3,4,2)
+        # frm.drop(0,2,1)
+        # frm.drop(3,2,2)
+        # frm.drop(0,2,1)
+        # frm.drop(3,2,2)
+        # frm.drop(1,0,1)
+        # frm.drop(2,4,2)
         # rd = Rigid(1, frm)
         # rd.next()
         pass
@@ -324,15 +268,9 @@ if __name__ == "__main__":
     # REPL((Rigid(1,frm), Human(2,frm)),frm)
 
     '''Rigid vs Rigid:'''
-    # REPL((Rigid(1, frm), Rigid(2, frm)), frm)
+    REPL((Rigid(1, frm), Rigid(2, frm)), frm)
 
 
     # rd = Rigid(1,frm)
     # frm.drop(*rd.next(),1)
     # frm.output()
-
-    frm.output()
-    m = Moment(2,frame=frm, grading=Rigid().Judge)
-    m.dilate()
-    print(m.assess())
-    print(f"{m.nextMoments}")
