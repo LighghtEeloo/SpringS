@@ -43,13 +43,12 @@ class Moment:
             _.frame.drop(*step, opp)
             if _.frame.win() != 0:
                 self.visited = -1
-            # _.frame.output()
             self.nextMoments.append(_)
         self.visited = len(self.nextMoments) if self.visited != -1 else -1
         if not rad is None:
             # TODO: use rad!
             self.nextMoments.sort(key=lambda x: (-self.grading(x.frame, opp)))
-            self.nextMoments = self.nextMoments[:rad]
+            self.nextMoments = self.nextMoments[:rad] # python automatically takes care of the upper bound
         self.frame = None
         return self.nextMoments
     def assess(self):
@@ -145,21 +144,22 @@ class Reader(Player):
 
 
 class Rigid(Player):
+    # 己方后手评分
     relationGrade = [
-        [50, 24, 11, 5],  # 己方已满
-        [-400, 11, 5, 2],  # 己方差一
-        [-900, -400, 2, 0]  # 己方差二
+        [-500, 24,11, 2],  # 己方已满
+        [-20,-200, 5, 1],  # 己方差一
+        [ -9, -20,-2, 0]  # 己方差二
     ]
     # 对手已满，差一，差二，差三
     biasGrade = [
-        18, 8, 3, 1
+        45, 20, 17, 15
     ]
     # 已满至差三的分数
     def __init__(self, side=0, frame=None):
         super().__init__(side=side, frame=frame)
         self.numNext = 0
-        self.maxDepth = 5
-        self.radius = 9
+        self.maxDepth = 4
+        self.radius = None # None for no restriction
 
     def next(self):
         rad = self.radius
@@ -175,6 +175,7 @@ class Rigid(Player):
                 tmp.extend(a)
             dilatation = tmp.copy()
         root.assess()
+        # print(root.nextMoments)
         root.nextMoments.sort(key=lambda x: (-x.grade))
         return root.nextMoments[0].step
 
@@ -188,19 +189,23 @@ class Rigid(Player):
             if potA.side == view and potB.side == oppview:
                 return cls.relationGrade[potA.limit - potA.height - 1][potB.limit - potB.height - 1]
             if potA.side == view and potB.side == 0:
-                return cls.relationGrade[potA.limit - potA.height - 1][potB.limit - potB.height - 1] // 2
+                try:
+                    return cls.relationGrade[potA.limit - potA.height - 1][potB.limit - potB.height - 1] // 2
+                except IndexError:
+                    print(f"PotA: {potA}\nPotB: {potB}") # too much for a block
+                    print(f"indices: {[potA.limit - potA.height - 1, potB.limit - potB.height - 1]}")
             return 0
-        size = frm.size
+        row, col = frm.size
         grade = 0
         _ = []
-        for i in range(size[0]):
-            for j in range(size[1]):
+        for i in range(row):
+            for j in range(col):
                 x, y = i + 1, j
-                if x < size[0]:
+                if x < row:
                     _.append(gradeHelper(
                         frm.board[i][j], frm.board[x][y], view))
                 x, y = i, j + 1
-                if y < size[1]:
+                if y < col:
                     _.append(gradeHelper(
                         frm.board[i][j], frm.board[x][y], view))
                 x, y = i - 1, j
@@ -229,8 +234,12 @@ class Rigid(Player):
         # if frm is None:
         #     frm = self.frame
         oppview = view % 2 + 1
-        grade = cls.relationalJudge(frm, view) + cls.biasJudge(frm, view) - \
-            cls.relationalJudge(frm, oppview) - cls.biasJudge(frm, oppview)
+        grade = (
+            # + cls.relationalJudge(frm, view) 
+            + cls.biasJudge(frm, view)
+            # - cls.relationalJudge(frm, oppview) 
+            - cls.biasJudge(frm, oppview)
+        )
         return grade
 
 
@@ -258,8 +267,12 @@ if __name__ == "__main__":
         # frm.drop(3,2,2)
         # frm.drop(0,2,1)
         # frm.drop(3,2,2)
-        # frm.drop(1,0,1)
-        # frm.drop(2,4,2)
+        # frm.drop(1,2,1)
+        # frm.drop(2,2,2)
+        # frm.drop(1,2,1)
+        # frm.drop(2,2,2)
+        # frm.drop(1,2,1)
+        # frm.drop(2,2,2)
         # rd = Rigid(1, frm)
         # rd.next()
         pass
@@ -268,9 +281,13 @@ if __name__ == "__main__":
     # REPL((Rigid(1,frm), Human(2,frm)),frm)
 
     '''Rigid vs Rigid:'''
-    REPL((Rigid(1, frm), Rigid(2, frm)), frm)
+    # REPL((Rigid(1, frm), Rigid(2, frm)), frm)
 
 
     # rd = Rigid(1,frm)
     # frm.drop(*rd.next(),1)
-    # frm.output()
+
+    # print(Rigid.relationalJudge(frm,2))
+    # print(Rigid.biasJudge(frm,2))
+    # print(Rigid.Judge(frm,2))
+    

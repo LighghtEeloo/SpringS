@@ -41,7 +41,7 @@ class Frame:
                     self.board[i][j].limit -= 1
                 if (i == 0 or i == size[0]-1) and (j == 0 or j == size[1]-1):
                     self.board[i][j].limit -= 1
-        self.hashBoard = [[random()*2**32//1 for j in range(size[1])] for i in range(size[0])]
+        # self.hashBoard = [[random()*2**32//1 for j in range(size[1])] for i in range(size[0])]
     def __getitem__(self, position):
         return self.board[position]
     def __eq__(self, other):
@@ -52,8 +52,17 @@ class Frame:
                     eqBoard = False
                     break
         return eqBoard and self.size==other.size
+    def __hash__(self):
+        row, col = self.size
+        return (
+            + sum([5*self.board[i][j].height for i in range(row) for j in range(col) if self.board[i][j].side == 1])
+            + sum([-self.board[i][j].height for i in range(row) for j in range(col) if self.board[i][j].side == 2])
+            # + sum([5*self.board[i][j].height * self.hashBoard[i][j] for i in range(row) for j in range(col) if self.board[i][j].side == 1])
+            # + sum([-self.board[i][j].height * self.hashBoard[i][j] for i in range(row) for j in range(col) if self.board[i][j].side == 2])
+        )
+        return super().__hash__()
     def __repr__(self):
-        strBoard = ""
+        strBoard = "\n"
         for i in range(self.size[0]):
             for j in range(self.size[1]):
                 strBoard += f"{self.board[i][j]}"
@@ -62,7 +71,7 @@ class Frame:
         return strBoard
     def sync(self, board=None):
         if board != None:
-            self.board = board[:]
+            self.board = deepcopy(board)
             return 0
         return 1
     def drop(self, x, y, side): # 玩家落子时调用
@@ -110,26 +119,26 @@ class Frame:
                 print(f"({bd[i][j].height}|{chr(bd[i][j].side+64)}),",end="")
             print()
         print()
-    def loop(self):
-        side = 1
-        cnt = 1
-        for _ in range(3):
-            for i in range(4):
-                for j in range(5):
-                    print(f"--- {cnt} ---")
-                    print(f"trying: ({i},{j}) side: {chr(side+64)}")
-                    if self.drop(i,j, side) == -1:
-                        continue
-                    print(f"({i},{j})")
-                    cnt += 1
-                    if cnt == 42:
-                        break
-                    self.output()
-                    if self.win():
-                        print("win!")
-                        break
-                    side = side % 2 + 1
-                    print()
+    # def loop(self):
+    #     side = 1
+    #     cnt = 1
+    #     for _ in range(3):
+    #         for i in range(4):
+    #             for j in range(5):
+    #                 print(f"--- {cnt} ---")
+    #                 print(f"trying: ({i},{j}) side: {chr(side+64)}")
+    #                 if self.drop(i,j, side) == -1:
+    #                     continue
+    #                 print(f"({i},{j})")
+    #                 cnt += 1
+    #                 if cnt == 42:
+    #                     break
+    #                 self.output()
+    #                 if self.win():
+    #                     print("win!")
+    #                     break
+    #                 side = side % 2 + 1
+    #                 print()
 
 
 def REPL(players, publicFrm, record=True, addr=None):
@@ -140,7 +149,7 @@ def REPL(players, publicFrm, record=True, addr=None):
         print(f"--- {cnt} ---")
         print(f"Asking: side {chr(side+64)}")
         i, j = players[side-1].next()
-        print(f"trying: ({i},{j}) side: {chr(side+64)}")
+        print(f"trying: ({i},{j}) side: {chr(side+64)}", end="")
         if publicFrm.drop(i, j, side) == -1:
             continue
         print(f"({i},{j})")
@@ -148,7 +157,7 @@ def REPL(players, publicFrm, record=True, addr=None):
         seq.append((i,j))
         if cnt == 42:
             break
-        publicFrm.output()
+        print(publicFrm)
         # print(relationalJudge(publicFrm, 1) + biasJudge(publicFrm, 1) - relationalJudge(publicFrm, 2) - biasJudge(publicFrm, 2))
         if publicFrm.win():
             print(f"side {chr(publicFrm.win()+64)} won!")
