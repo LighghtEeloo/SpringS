@@ -162,7 +162,7 @@ class Rigid(Player):
     def __init__(self, side=0, frame=None):
         super().__init__(side=side, frame=frame)
         self.numNext = 0
-        self.maxDepth = 4
+        self.maxDepth = 1
         self.radius = None # None for no restriction
 
     def next(self):
@@ -234,7 +234,7 @@ class Rigid(Player):
             for j in range(size[1]):
                 pot = frm.board[i][j]
                 if pot.side == view:
-                    grade += cls.biasGrade[pot.limit - pot.height - 1]
+                    grade += biasGrade[pot.limit - pot.height - 1]
         return grade
     
     @classmethod
@@ -248,9 +248,9 @@ class Rigid(Player):
         oppview = view % 2 + 1
         grade = (
             # + cls.relationalJudge(frm, view) 
-            + cls.biasJudgeBefore(frm, view)
+            + cls.biasJudge(frm, view, biasGradeBefore)
             # - cls.relationalJudge(frm, oppview) 
-            - cls.biasJudgeNext(frm, oppview)
+            - cls.biasJudge(frm, oppview, biasGradeNext)
         )
         return grade
 

@@ -145,6 +145,7 @@ def REPL(players, publicFrm, record=True, addr=None):
     side = 1
     cnt = 1
     seq = []
+    won = None
     while True:
         print(f"--- {cnt} ---")
         print(f"Asking: side {chr(side+64)}")
@@ -159,8 +160,9 @@ def REPL(players, publicFrm, record=True, addr=None):
             break
         print(publicFrm)
         # print(relationalJudge(publicFrm, 1) + biasJudge(publicFrm, 1) - relationalJudge(publicFrm, 2) - biasJudge(publicFrm, 2))
-        if publicFrm.win():
-            print(f"side {chr(publicFrm.win()+64)} won!")
+        won = publicFrm.win()
+        if won:
+            print(f"side {chr(won+64)} won!")
             break
         side = side % 2 + 1
         print()
@@ -168,3 +170,4 @@ def REPL(players, publicFrm, record=True, addr=None):
         _ = addr if addr != None else "rec.pkl"
         with open(_, 'wb') as f:
             pickle.dump(seq, f)
+    return won
