@@ -151,7 +151,11 @@ class Rigid(Player):
         [ -9, -20,-2, 0]  # 己方差二
     ]
     # 对手已满，差一，差二，差三
-    biasGrade = [
+    biasGradeBefore = [
+        45, 20, 17, 15
+    ]
+    # 已满至差三的分数
+    biasGradeNext = [
         45, 20, 17, 15
     ]
     # 已满至差三的分数
@@ -219,8 +223,11 @@ class Rigid(Player):
         grade = sum(_)
         # print(f"relational: {_}")
         return grade
+    
     @classmethod
-    def biasJudge(cls, frm, view) -> int:
+    def biasJudge(cls, frm, view, biasGrade=None) -> int:
+        if biasGrade is None:
+            biasGrade = cls.biasGradeBefore
         size = frm.size
         grade = 0
         for i in range(size[0]):
@@ -229,16 +236,21 @@ class Rigid(Player):
                 if pot.side == view:
                     grade += cls.biasGrade[pot.limit - pot.height - 1]
         return grade
+    
     @classmethod
-    def Judge(cls, frm=None, view=1) -> int:
+    def Judge(cls, frm=None, view=1, biasGradeBefore=None, biasGradeNext=None) -> int:
         # if frm is None:
         #     frm = self.frame
+        if biasGradeBefore is None: 
+            biasGradeBefore = cls.biasGradeBefore
+        if biasGradeNext is None: 
+            biasGradeNext = cls.biasGradeNext
         oppview = view % 2 + 1
         grade = (
             # + cls.relationalJudge(frm, view) 
-            + cls.biasJudge(frm, view)
+            + cls.biasJudgeBefore(frm, view)
             # - cls.relationalJudge(frm, oppview) 
-            - cls.biasJudge(frm, oppview)
+            - cls.biasJudgeNext(frm, oppview)
         )
         return grade
 
@@ -281,7 +293,7 @@ if __name__ == "__main__":
     # REPL((Rigid(1,frm), Human(2,frm)),frm)
 
     '''Rigid vs Rigid:'''
-    # REPL((Rigid(1, frm), Rigid(2, frm)), frm)
+    REPL((Rigid(1, frm), Rigid(2, frm)), frm)
 
 
     # rd = Rigid(1,frm)
@@ -290,4 +302,3 @@ if __name__ == "__main__":
     # print(Rigid.relationalJudge(frm,2))
     # print(Rigid.biasJudge(frm,2))
     # print(Rigid.Judge(frm,2))
-    

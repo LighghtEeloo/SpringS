@@ -152,7 +152,7 @@ def REPL(players, publicFrm, record=True, addr=None):
         print(f"trying: ({i},{j}) side: {chr(side+64)}", end="")
         if publicFrm.drop(i, j, side) == -1:
             continue
-        print(f"({i},{j})")
+        # print(f"({i},{j})")
         cnt += 1
         seq.append((i,j))
         if cnt == 42:
