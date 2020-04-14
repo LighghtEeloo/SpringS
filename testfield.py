@@ -5,6 +5,7 @@ class Holder:
     def __init__(self, Units: list):
         self.Units = Units
         self.Scores = {}
+        self.Grade = [0]*len(Units)
     def round(self):
         def match(botA: Player, botB: Player, Ids=None):
             botA.side = 1
@@ -27,6 +28,13 @@ class Holder:
                     Scores[(i,j)] += match(queue[i], queue[j], f"{i:0>2} - {j:0>2}, {k:0>1}")
                     Scores[(j,i)] += match(queue[j], queue[i], f"{j:0>2} - {i:0>2}, {k:0>1}")
         self.Scores = Scores
+    def grade(self):
+        for sides, result in self.Scores.items():
+            A, B = sides
+            if result == 1:
+                self.Grade[A] += 2
+                self.Grade[B] -= 1
+
 
 if __name__ == "__main__":
     # for i in range(10):
