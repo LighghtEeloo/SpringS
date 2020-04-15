@@ -32,8 +32,12 @@ class Holder:
         for sides, result in self.Scores.items():
             A, B = sides
             if result == 1:
-                self.Grade[A] += 2
-                self.Grade[B] -= 1
+                self.Grade[A] += 10
+                self.Grade[B] -= 7
+            elif result == 2:
+                self.Grade[B] += 10
+                self.Grade[A] -= 7
+        return self.Grade
 
 
 if __name__ == "__main__":
@@ -42,3 +46,4 @@ if __name__ == "__main__":
     #         print(f"{i:0>2},{j}")
     hd = Holder([Rigid() for _ in range(10)])
     hd.round()
+    print(hd.grade())
