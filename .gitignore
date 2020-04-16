@@ -1,0 +1,4 @@
+MatchInfoCache/*
+rec.pkl
+.vscode/*
+__pycache__/*

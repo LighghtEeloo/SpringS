@@ -141,16 +141,18 @@ class Frame:
     #                 print()
 
 
-def REPL(players, publicFrm, record=True, addr=None):
+def REPL(players, publicFrm, record=True, addr=None, printing=True):
     side = 1
     cnt = 1
     seq = []
     won = None
     while True:
-        print(f"--- {cnt} ---")
-        print(f"Asking: side {chr(side+64)}")
+        if printing:
+            print(f"--- {cnt} ---")
+            print(f"Asking: side {chr(side+64)}")
         i, j = players[side-1].next()
-        print(f"trying: ({i},{j}) side: {chr(side+64)}", end="")
+        if printing:
+            print(f"trying: ({i},{j}) side: {chr(side+64)}", end="")
         if publicFrm.drop(i, j, side) == -1:
             continue
         # print(f"({i},{j})")
@@ -158,14 +160,17 @@ def REPL(players, publicFrm, record=True, addr=None):
         seq.append((i,j))
         if cnt == 42:
             break
-        print(publicFrm)
+        if printing:
+            print(publicFrm)
         # print(relationalJudge(publicFrm, 1) + biasJudge(publicFrm, 1) - relationalJudge(publicFrm, 2) - biasJudge(publicFrm, 2))
         won = publicFrm.win()
         if won:
-            print(f"side {chr(won+64)} won!")
+            if printing:
+                print(f"side {chr(won+64)} won!")
             break
         side = side % 2 + 1
-        print()
+        if printing:
+            print()
     if record:
         _ = addr if addr != None else "rec.pkl"
         with open(_, 'wb') as f:

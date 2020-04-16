@@ -165,6 +165,10 @@ class Rigid(Player):
         self.maxDepth = 1
         self.radius = None # None for no restriction
 
+    def __repr__(self):
+        string = f' - Rigid:\nbiasGradeBefore: {self.biasGradeBefore}\nbiasGradeNext: {self.biasGradeNext}' 
+        return string
+
     def next(self):
         rad = self.radius
         self.numNext += 1
@@ -172,7 +176,7 @@ class Rigid(Player):
         root = Moment(opp, frame=deepcopy(self.frame), grading=self.Judge)
         dilatation = [root]
         for depth in range(self.maxDepth):
-            print("depth:", depth)
+            # print("depth:", depth)
             tmp = []
             for node in dilatation:
                 a = node.dilate(rad=rad)

@@ -6,7 +6,7 @@ class Holder:
         self.Units = Units
         self.Scores = {}
         self.Grade = [0]*len(Units)
-    def round(self):
+    def round(self, printing=False):
         def match(botA: Player, botB: Player, Ids=None):
             botA.side = 1
             botB.side = 2
@@ -14,9 +14,10 @@ class Holder:
             botA.frame = botB.frame = frm
             winningSide = None
             if not Ids:
-                winningSide = REPL([botA,botB], frm, record=False)
+                winningSide = REPL([botA,botB], frm, record=False, printing=printing)
             else:
-                winningSide = REPL([botA, botB], frm, record=True, addr="MatchInfoCache/"+Ids+".pkl")
+                winningSide = REPL([botA, botB], frm, record=True,
+                                   addr="MatchInfoCache/"+Ids+".pkl", printing=printing)
             return winningSide
         
         queue = self.Units
@@ -38,12 +39,16 @@ class Holder:
                 self.Grade[B] += 10
                 self.Grade[A] -= 7
         return self.Grade
+    def filter(self):
+        pass
+    def evolve(self):
+        pass
 
 
 if __name__ == "__main__":
     # for i in range(10):
     #     for j in range(10):
     #         print(f"{i:0>2},{j}")
-    hd = Holder([Rigid() for _ in range(10)])
+    hd = Holder([Rigid() for _ in range(20)])
     hd.round()
     print(hd.grade())
