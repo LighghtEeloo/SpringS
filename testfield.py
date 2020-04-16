@@ -4,8 +4,8 @@ from Player import *
 class Holder:
     def __init__(self, Units: list):
         self.Units = Units
-        self.Scores = {}
-        self.Grade = [0]*len(Units)
+        self.MatchRes = {}
+        self.Score = [0]*len(Units)
     def round(self, printing=False):
         def match(botA: Player, botB: Player, Ids=None):
             botA.side = 1
@@ -21,26 +21,27 @@ class Holder:
             return winningSide
         
         queue = self.Units
-        Scores = {}
+        Res = {}
         for i in range(len(queue)):
             for j in range(i+1, len(queue)):
-                Scores[(i,j)] = Scores[(j,i)] = 0
+                Res[(i,j)] = Res[(j,i)] = 0
                 for k in range(1):
-                    Scores[(i,j)] += match(queue[i], queue[j], f"{i:0>2} - {j:0>2}, {k:0>1}")
-                    Scores[(j,i)] += match(queue[j], queue[i], f"{j:0>2} - {i:0>2}, {k:0>1}")
-        self.Scores = Scores
+                    Res[(i,j)] += match(queue[i], queue[j], f"{i:0>2} - {j:0>2}, {k:0>1}")
+                    Res[(j,i)] += match(queue[j], queue[i], f"{j:0>2} - {i:0>2}, {k:0>1}")
+        self.MatchRes = Res
     def grade(self):
-        for sides, result in self.Scores.items():
+        for sides, result in self.MatchRes.items():
             A, B = sides
             if result == 1:
-                self.Grade[A] += 10
-                self.Grade[B] -= 7
+                self.Score[A] += 10
+                self.Score[B] -= 7
             elif result == 2:
-                self.Grade[B] += 10
-                self.Grade[A] -= 7
-        return self.Grade
-    def filter(self):
-        pass
+                self.Score[B] += 10
+                self.Score[A] -= 7
+        return self.Score
+    def filter(self, reserve):
+        com = [(self.Units[i], self.Score[i]) for i in range(len(self.Units))].sorted(key=lambda x: (x[1]), reversed=True)[:reserve]
+        return com
     def evolve(self):
         pass
 
