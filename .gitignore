@@ -2,3 +2,5 @@ MatchInfoCache/*
 rec.pkl
 .vscode/*
 __pycache__/*
+SpringWorkSpace.code-workspace
+.gitignore
