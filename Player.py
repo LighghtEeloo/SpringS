@@ -2,6 +2,7 @@ from springFrame import *
 
 
 class Moment:
+    __slots__ = ('parent','won','grade','view','step','frame','grading','nextMoments','visited')
     def __init__(self, view, parent=None, step=None, frame=None, grading=None):
         self.parent = parent
         self.won = None
@@ -144,29 +145,48 @@ class Reader(Player):
 
 
 class Rigid(Player):
-    # 己方后手评分
-    relationGrade = [
-        [-500, 24,11, 2],  # 己方已满
-        [-20,-200, 5, 1],  # 己方差一
-        [ -9, -20,-2, 0]  # 己方差二
-    ]
-    # 对手已满，差一，差二，差三
-    biasGradeBefore = [
-        45, 20, 17, 15
-    ]
-    # 已满至差三的分数
-    biasGradeNext = [
-        45, 20, 17, 15
-    ]
-    # 已满至差三的分数
     def __init__(self, side=0, frame=None):
+        # 己方后手评分
+        self.relationGrade = [
+            [-500, 24,11, 2],  # 己方已满
+            [-20,-200, 5, 1],  # 己方差一
+            [ -9, -20,-2, 0]  # 己方差二
+        ]
+        # 对手已满，差一，差二，差三
+
+
+        # self.biasGradeBefore = [3.36e+02, -2.42e+02, -5.99e+02, -2.79e+02, ]
+        # self.biasGradeNext = [1053.72, -94.75, 238.98, 228.27, ]
+
+        self.biasGradeBefore = [
+            45.0, 20.0, 17.0, 15.0
+        ]
+        # 已满至差三的分数
+        self.biasGradeNext = [
+            45.0, 20.0, 17.0, 15.0
+        ]
+        # 已满至差三的分数
         super().__init__(side=side, frame=frame)
         self.numNext = 0
         self.maxDepth = 1
         self.radius = None # None for no restriction
 
     def __repr__(self):
-        string = f' - Rigid:\nbiasGradeBefore: {self.biasGradeBefore}\nbiasGradeNext: {self.biasGradeNext}' 
+        A = '['
+        for k in self.biasGradeBefore:
+            if type(k) == int:
+                A += f'{k:4},'
+            else:
+                A += f'{k:5.3},'
+        A += ']'
+        B = '['
+        for k in self.biasGradeNext:
+            if type(k) == int:
+                B += f'{k:4},'
+            else:
+                B += f'{k:5.2f},'
+        B += ']'
+        string = f' - Rigid:\nbiasGradeBefore: {A}\nbiasGradeNext: {B}' 
         return string
 
     def next(self):
@@ -187,18 +207,16 @@ class Rigid(Player):
         root.nextMoments.sort(key=lambda x: (-x.grade))
         return root.nextMoments[0].step
 
-    # Wrong!
-    # Wrong!!
-    # Wrong!!!
-    @classmethod
-    def relationalJudge(cls, frm, view) -> int:
+    # FIXME: xxx
+    # @classmethod
+    def relationalJudge(self, frm, view) -> int:
         def gradeHelper(potA, potB, view):
             oppview = view % 2 + 1
             if potA.side == view and potB.side == oppview:
-                return cls.relationGrade[potA.limit - potA.height - 1][potB.limit - potB.height - 1]
+                return self.relationGrade[potA.limit - potA.height - 1][potB.limit - potB.height - 1]
             if potA.side == view and potB.side == 0:
                 try:
-                    return cls.relationGrade[potA.limit - potA.height - 1][potB.limit - potB.height - 1] // 2
+                    return self.relationGrade[potA.limit - potA.height - 1][potB.limit - potB.height - 1] // 2
                 except IndexError:
                     print(f"PotA: {potA}\nPotB: {potB}") # too much for a block
                     print(f"indices: {[potA.limit - potA.height - 1, potB.limit - potB.height - 1]}")
@@ -228,10 +246,10 @@ class Rigid(Player):
         # print(f"relational: {_}")
         return grade
     
-    @classmethod
-    def biasJudge(cls, frm, view, biasGrade=None) -> int:
+    # @classmethod
+    def biasJudge(self, frm, view, biasGrade=None) -> int:
         if biasGrade is None:
-            biasGrade = cls.biasGradeBefore
+            biasGrade = self.biasGradeBefore
         size = frm.size
         grade = 0
         for i in range(size[0]):
@@ -241,20 +259,20 @@ class Rigid(Player):
                     grade += biasGrade[pot.limit - pot.height - 1]
         return grade
     
-    @classmethod
-    def Judge(cls, frm=None, view=1, biasGradeBefore=None, biasGradeNext=None) -> int:
+    # @classmethod
+    def Judge(self, frm=None, view=1, biasGradeBefore=None, biasGradeNext=None) -> int:
         # if frm is None:
         #     frm = self.frame
         if biasGradeBefore is None: 
-            biasGradeBefore = cls.biasGradeBefore
+            biasGradeBefore = self.biasGradeBefore
         if biasGradeNext is None: 
-            biasGradeNext = cls.biasGradeNext
+            biasGradeNext = self.biasGradeNext
         oppview = view % 2 + 1
         grade = (
             # + cls.relationalJudge(frm, view) 
-            + cls.biasJudge(frm, view, biasGradeBefore)
+            + self.biasJudge(frm, view, biasGradeBefore)
             # - cls.relationalJudge(frm, oppview) 
-            - cls.biasJudge(frm, oppview, biasGradeNext)
+            - self.biasJudge(frm, oppview, biasGradeNext)
         )
         return grade
 
@@ -306,3 +324,10 @@ if __name__ == "__main__":
     # print(Rigid.relationalJudge(frm,2))
     # print(Rigid.biasJudge(frm,2))
     # print(Rigid.Judge(frm,2))
+
+
+    # rd1 = Rigid(2,frm)
+    # rd2 = Rigid(1,frm)
+    # rd2.biasGradeBefore = [3.36e+02, -2.42e+02, -5.99e+02, -2.79e+02, ]
+    # rd2.biasGradeNext = [1053.72, -94.75, 238.98, 228.27, ]
+    # REPL((rd2,rd1),frm)

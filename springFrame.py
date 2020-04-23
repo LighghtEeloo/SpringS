@@ -7,6 +7,7 @@ printing = False
 
 
 class Pot:
+    __slots__ = ('side','height','limit')
     def __init__(self, side, height, limit):
         self.side = side
         self.height = height
@@ -31,6 +32,7 @@ class Pot:
 
 
 class Frame:
+    __slots__ = ('size','board')
     def __init__(self, size=(4,5)):
         super().__init__()
         self.size = size
